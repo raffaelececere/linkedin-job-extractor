@@ -23,7 +23,7 @@ It works directly inside the LinkedIn Jobs interface, collecting job metadata an
 ## Installation
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) in your browser.
-2. Open the [LinkedIn Job Extractor userscript](https://raw.githubusercontent.com/sbzzzzzzzzz/linkedin-job-extractor/main/linkedin-job-extractor.user.js).
+2. Open the [LinkedIn Job Extractor userscript](https://raw.githubusercontent.com/raffaelececere/linkedin-job-extractor/main/linkedin-job-extractor.user.js).
 3. Confirm the installation in Tampermonkey.
 4. Open LinkedIn Jobs.
 
@@ -33,7 +33,7 @@ No build step or additional dependency is required.
 
 Open a LinkedIn Jobs search and choose how many result pages you want to process.
 
-Press **ESTRAI ANNUNCI** and leave the LinkedIn Jobs tab open while the script works through the available listings.
+Press **START EXTRACTION** and leave the LinkedIn Jobs tab open while the script works through the available listings.
 
 When the extraction is complete, choose the export format:
 
@@ -41,7 +41,7 @@ When the extraction is complete, choose the export format:
 - `JSON`
 - `TXT + JSON`
 
-Then press **SALVA RISULTATI**.
+Then press **SAVE RESULTS**.
 
 The panel can be minimized with the `−` button and moved anywhere on the page while the extraction is running.
 
@@ -81,7 +81,7 @@ Repeated extraction failures stop the run rather than creating an uncontrolled r
 
 ## Debugging
 
-The interface includes a **SCARICA DEBUG** button.
+The interface includes a **DOWNLOAD DEBUG** button.
 
 The debug log only contains events from the latest extraction run and is intended to help diagnose DOM changes, missing fields or failed listings.
 
@@ -126,3 +126,10 @@ There is no bundler or runtime dependency. The installed file is the same source
 LinkedIn Job Extractor is an independent, unofficial project and is not affiliated with, endorsed by or sponsored by LinkedIn.
 
 Users are responsible for using the script in accordance with applicable terms, policies and local requirements.
+
+
+## Author
+
+Raffaele Marco Cecere
+
+GitHub: [@raffaelececere](https://github.com/raffaelececere)
