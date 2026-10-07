@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         LinkedIn Job Extractor
-// @namespace    https://github.com/sbzzzzzzzzz/linkedin-job-extractor
-// @version      1.0.0
+// @author       Raffaele Marco Cecere
+// @namespace    https://github.com/raffaelececere/linkedin-job-extractor
+// @version      1.0.1
 // @description  Extract complete LinkedIn job listings and export structured TXT and JSON files.
 // @match        https://www.linkedin.com/jobs/*
-// @homepageURL  https://github.com/sbzzzzzzzzz/linkedin-job-extractor
-// @supportURL   https://github.com/sbzzzzzzzzz/linkedin-job-extractor/issues
-// @updateURL    https://raw.githubusercontent.com/sbzzzzzzzzz/linkedin-job-extractor/main/linkedin-job-extractor.user.js
-// @downloadURL  https://raw.githubusercontent.com/sbzzzzzzzzz/linkedin-job-extractor/main/linkedin-job-extractor.user.js
+// @homepageURL  https://github.com/raffaelececere/linkedin-job-extractor
+// @supportURL   https://github.com/raffaelececere/linkedin-job-extractor/issues
+// @updateURL    https://raw.githubusercontent.com/raffaelececere/linkedin-job-extractor/main/linkedin-job-extractor.user.js
+// @downloadURL  https://raw.githubusercontent.com/raffaelececere/linkedin-job-extractor/main/linkedin-job-extractor.user.js
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_deleteValue
@@ -23,7 +24,7 @@
         return;
     }
 
-    const VERSION = '1.0.0';
+    const VERSION = '1.0.1';
     const STATE_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_STATE';
     const POS_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_POSITION';
     const LOG_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_DEBUG_LOG';
@@ -65,8 +66,7 @@
             'li.discovery-templates-entity-item',
             '[data-occludable-job-id]',
             '[data-job-id]',
-            'a[componentkey]',
-            'div[role="button"][componentkey]'
+            '[componentkey*="job-card-component-ref-"]'
         ],
         cardCandidates: [
             '[data-job-id]',
@@ -186,7 +186,7 @@
                 return item;
             }));
         } catch {
-            try { return String(value); } catch { return '[non serializzabile]'; }
+            try { return String(value); } catch { return '[unserializable]'; }
         }
     }
 
@@ -296,17 +296,17 @@
         const state = loadState();
         const entries = loadDebugLog();
         let out = `LINKEDIN JOB EXTRACTOR V${VERSION} - DEBUG LOG\n\n`;
-        out += `Generato: ${new Date().toLocaleString()}\n`;
-        out += `Sessione corrente: ${state?.sessionId || SESSION_ID}\n`;
-        out += `URL corrente: ${diagnosticUrl()}\n`;
+        out += `Generated: ${new Date().toLocaleString()}\n`;
+        out += `Current session: ${state?.sessionId || SESSION_ID}\n`;
+        out += `Current URL: ${diagnosticUrl()}\n`;
         out += `Browser: ${navigator.userAgentData?.brands?.map(x => x.brand + ' ' + x.version).join(', ') || navigator.userAgent}\n`;
-        out += `Stato presente: ${state ? 'SI' : 'NO'}\n`;
+        out += `State present: ${state ? 'YES' : 'NO'}\n`;
         out += `Running: ${Boolean(state?.running)}\n`;
-        out += `Pagina: ${(state?.page ?? 0) + 1}\n`;
-        out += `Pagine target: ${state?.targetPages || '-'}\n`;
-        out += `Risultati: ${state?.results?.length || 0}\n`;
-        out += `Errori annunci: ${state?.errors?.length || 0}\n`;
-        out += `Eventi log memorizzati: ${entries.length}\n\n`;
+        out += `Page: ${(state?.page ?? 0) + 1}\n`;
+        out += `Target pages: ${state?.targetPages || '-'}\n`;
+        out += `Results: ${state?.results?.length || 0}\n`;
+        out += `Job errors: ${state?.errors?.length || 0}\n`;
+        out += `Stored log events: ${entries.length}\n\n`;
         out += '============================================================\n';
 
         for (const entry of entries) {
@@ -331,7 +331,7 @@
         setTimeout(() => URL.revokeObjectURL(url), 3000);
     }
 
-    function downloadDebugLog(reason = 'manuale') {
+    function downloadDebugLog(reason = 'manual') {
         debugLog('INFO', 'debug.download', { reason });
         const stamp = new Date().toISOString().replace(/[:.]/g, '-');
         download(`linkedin_job_extractor_DEBUG_${stamp}.txt`, buildDebugTxt(), 'text/plain;charset=utf-8');
@@ -391,24 +391,24 @@
         const startedAtMs = progressState.startedAtMs || now;
         const elapsedMs = Math.max(0, now - startedAtMs);
 
-        if (elapsedEl) elapsedEl.textContent = `Trascorso ${formatDuration(elapsedMs)}`;
+        if (elapsedEl) elapsedEl.textContent = `Elapsed ${formatDuration(elapsedMs)}`;
 
         if (etaEl) {
             if (!progressState.running) {
                 etaEl.textContent = progressState.total > 0 && progressState.completed >= progressState.total
-                    ? 'Rimanente 00:00'
-                    : 'Rimanente --:--';
+                    ? 'Remaining 00:00'
+                    : 'Remaining --:--';
             } else if (
                 progressState.completed >= 2 &&
                 progressState.total > progressState.completed
             ) {
                 const averageMs = elapsedMs / progressState.completed;
                 const remainingMs = averageMs * (progressState.total - progressState.completed);
-                etaEl.textContent = `Rimanente ~${formatDuration(remainingMs)}`;
+                etaEl.textContent = `Remaining ~${formatDuration(remainingMs)}`;
             } else if (progressState.total > 0 && progressState.completed >= progressState.total) {
-                etaEl.textContent = 'Rimanente 00:00';
+                etaEl.textContent = 'Remaining 00:00';
             } else {
-                etaEl.textContent = 'Rimanente --:--';
+                etaEl.textContent = 'Remaining --:--';
             }
         }
     }
@@ -475,8 +475,8 @@
         }
         if (progressLabelEl) progressLabelEl.textContent = '0 / 0 · 0%';
         if (miniProgressEl) miniProgressEl.textContent = '';
-        if (elapsedEl) elapsedEl.textContent = 'Trascorso 00:00';
-        if (etaEl) etaEl.textContent = 'Rimanente --:--';
+        if (elapsedEl) elapsedEl.textContent = 'Elapsed 00:00';
+        if (etaEl) etaEl.textContent = 'Remaining --:--';
     }
 
     function setPages(value) {
@@ -497,7 +497,7 @@
                     label,
                     error: serializeForLog(error)
                 });
-                setStatus(`ERRORE\n\n${error?.message || String(error)}`);
+                setStatus(`ERROR\n\n${error?.message || String(error)}`);
             });
     }
 
@@ -579,8 +579,8 @@
 
         const minimize = document.createElement('button');
         minimize.textContent = '−';
-        minimize.title = 'Riduci pannello';
-        minimize.setAttribute('aria-label', 'Riduci pannello');
+        minimize.title = 'Minimize panel';
+        minimize.setAttribute('aria-label', 'Minimize panel');
         Object.assign(minimize.style, {
             position: 'absolute', top: '5px', right: '36px', width: '28px', height: '28px',
             border: '0', background: 'transparent', color: '#444', fontSize: '20px',
@@ -599,8 +599,8 @@
 
         const close = document.createElement('button');
         close.textContent = '×';
-        close.title = 'Chiudi pannello';
-        close.setAttribute('aria-label', 'Chiudi pannello');
+        close.title = 'Close panel';
+        close.setAttribute('aria-label', 'Close panel');
         Object.assign(close.style, {
             position: 'absolute', top: '5px', right: '7px', width: '28px', height: '28px',
             border: '0', background: 'transparent', color: '#444', fontSize: '22px',
@@ -608,13 +608,13 @@
         });
 
         const subtitle = document.createElement('div');
-        subtitle.textContent = 'Esporta annunci completi in TXT e JSON';
+        subtitle.textContent = 'Export complete job listings to TXT and JSON';
         Object.assign(subtitle.style, { marginTop: '4px', color: '#555', fontSize: '11px' });
 
         const row = document.createElement('div');
         Object.assign(row.style, { marginTop: '10px', display: 'flex', alignItems: 'center', gap: '7px' });
         const label = document.createElement('span');
-        label.textContent = 'Pagine';
+        label.textContent = 'Pages';
         pagesInput = document.createElement('input');
         pagesInput.id = APP.pagesInputId;
         pagesInput.type = 'number';
@@ -643,7 +643,7 @@
         });
 
         const progressCaption = document.createElement('span');
-        progressCaption.textContent = 'Avanzamento';
+        progressCaption.textContent = 'Progress';
         progressCaption.style.fontWeight = '700';
 
         progressLabelEl = document.createElement('span');
@@ -663,7 +663,7 @@
 
         progressBarEl = document.createElement('div');
         progressBarEl.setAttribute('role', 'progressbar');
-        progressBarEl.setAttribute('aria-label', 'Avanzamento estrazione annunci');
+        progressBarEl.setAttribute('aria-label', 'Job extraction progress');
         progressBarEl.setAttribute('aria-valuemin', '0');
         progressBarEl.setAttribute('aria-valuemax', '100');
         progressBarEl.setAttribute('aria-valuenow', '0');
@@ -688,17 +688,17 @@
         });
 
         elapsedEl = document.createElement('span');
-        elapsedEl.textContent = 'Trascorso 00:00';
+        elapsedEl.textContent = 'Elapsed 00:00';
         etaEl = document.createElement('span');
-        etaEl.textContent = 'Rimanente --:--';
+        etaEl.textContent = 'Remaining --:--';
         timeRow.append(elapsedEl, etaEl);
 
         progressBox.append(progressTop, progressTrack, timeRow);
 
-        startButtonEl = createButton('ESTRAI ANNUNCI', '#0a66c2');
+        startButtonEl = createButton('START EXTRACTION', '#0a66c2');
         stopButtonEl = createButton('STOP', '#a82828');
         resetButtonEl = createButton('RESET', '#555');
-        debugButtonEl = createButton('SCARICA DEBUG', '#6b4ca5');
+        debugButtonEl = createButton('DOWNLOAD DEBUG', '#6b4ca5');
 
         const saveRow = document.createElement('div');
         Object.assign(saveRow.style, {
@@ -709,7 +709,7 @@
         });
 
         saveFormatEl = document.createElement('select');
-        saveFormatEl.setAttribute('aria-label', 'Formato di esportazione');
+        saveFormatEl.setAttribute('aria-label', 'Export format');
         Object.assign(saveFormatEl.style, {
             width: '96px',
             minWidth: '96px',
@@ -732,7 +732,7 @@
             saveFormatEl.append(option);
         }
 
-        saveButtonEl = createButton('SALVA RISULTATI', '#237a47');
+        saveButtonEl = createButton('SAVE RESULTS', '#237a47');
         saveButtonEl.style.marginTop = '0';
         saveButtonEl.style.flex = '1';
 
@@ -744,7 +744,7 @@
             maxHeight: '210px', overflow: 'auto', background: '#f4f4f4',
             borderRadius: '6px', padding: '8px', font: '11px/1.35 Consolas,monospace'
         });
-        statusEl.textContent = 'Pronto.';
+        statusEl.textContent = 'Ready.';
 
         const content = document.createElement('div');
         content.append(
@@ -794,10 +794,10 @@
             title.style.marginRight = minimized ? '60px' : '64px';
 
             minimize.textContent = minimized ? '□' : '−';
-            minimize.title = minimized ? 'Ripristina pannello' : 'Riduci pannello';
+            minimize.title = minimized ? 'Restore panel' : 'Minimize panel';
             minimize.setAttribute(
                 'aria-label',
-                minimized ? 'Ripristina pannello' : 'Riduci pannello'
+                minimized ? 'Restore panel' : 'Minimize panel'
             );
 
             if (persist) persistPanelState();
@@ -830,8 +830,8 @@
             if (!state?.results?.length || state.running) return;
             await exportResults(state, saveFormatEl?.value || 'txt');
             setStatus(
-                `Salvataggio completato\n` +
-                `${state.results.length} annunci · ${(saveFormatEl?.value || 'txt').toUpperCase()}`
+                `Save complete\n` +
+                `${state.results.length} jobs · ${(saveFormatEl?.value || 'txt').toUpperCase()}`
             );
             refreshControls(state);
         }));
@@ -879,8 +879,7 @@
         const patterns = [
             /\/jobs\/view\/(\d+)/,
             /[?&]currentJobId=(\d+)/,
-            /job-card-component-ref-(\d+)/,
-            /(?:^|[^\d])(\d{8,12})(?:[^\d]|$)/
+            /job-card-component-ref-(\d+)/
         ];
         for (const re of patterns) {
             const m = text.match(re);
@@ -891,7 +890,7 @@
 
     function idFromElement(el) {
         if (!el) return '';
-        for (const attr of ['data-job-id', 'data-occludable-job-id', 'componentkey', 'href', 'id']) {
+        for (const attr of ['data-job-id', 'data-occludable-job-id', 'componentkey', 'href']) {
             const value = el.getAttribute?.(attr);
             if (!value) continue;
             if ((attr === 'data-job-id' || attr === 'data-occludable-job-id') && /^\d+$/.test(value)) return value;
@@ -903,6 +902,43 @@
 
     function canonicalCard(el) {
         return el.closest(SELECTORS.cardRoots.join(',')) || el;
+    }
+
+    function hasJobIdentity(card, id) {
+        if (!card || !id) return false;
+
+        const strongSelectors = [
+            `[data-job-id="${id}"]`,
+            `[data-occludable-job-id="${id}"]`,
+            `[componentkey*="job-card-component-ref-${id}"]`,
+            `a[href*="/jobs/view/${id}"]`
+        ];
+
+        for (const selector of strongSelectors) {
+            try {
+                if (card.matches?.(selector) || card.querySelector?.(selector)) return true;
+            } catch {}
+        }
+
+        let currentJobLink = null;
+        try {
+            currentJobLink = [...card.querySelectorAll('a[href*="currentJobId="]')].find(anchor => {
+                try {
+                    return new URL(anchor.getAttribute('href') || '', location.href).searchParams.get('currentJobId') === String(id);
+                } catch {
+                    return false;
+                }
+            }) || null;
+        } catch {}
+
+        if (!currentJobLink) return false;
+
+        return Boolean(
+            card.querySelector?.(
+                '.job-card-list__title--link,.job-card-container__link,.job-card-container,' +
+                '.artdeco-entity-lockup__subtitle,.artdeco-entity-lockup__caption'
+            )
+        );
     }
 
     function cardTitle(card) {
@@ -1017,7 +1053,7 @@
             if (!id) continue;
 
             const card = canonicalCard(el);
-            if (!card) continue;
+            if (!card || !hasJobIdentity(card, id)) continue;
 
             const r = card.getBoundingClientRect();
             if (r.left > window.innerWidth * 0.60 || r.width < 180 || r.height < 35) continue;
@@ -1052,7 +1088,7 @@
             if (STOP) break;
             scanCards(scroller, map);
             const state = loadState();
-            setStatus(`Pagina ${state?.page + 1 || 1}/${state?.targetPages || 1}\nRaccolgo card... ${map.size}`);
+            setStatus(`Page ${state?.page + 1 || 1}/${state?.targetPages || 1}\nCollecting job cards... ${map.size}`);
 
             stable = map.size === lastCount ? stable + 1 : 0;
             lastCount = map.size;
@@ -1308,23 +1344,37 @@
     }
 
     function clickableForCard(card, id) {
-        if (!card) return null;
+        if (!card || !hasJobIdentity(card, id)) return null;
+
         const links = [...card.querySelectorAll('a[href]')];
-        return links.find(a => idFromElement(a) === String(id)) ||
-            links.find(a => /\/jobs\/view\/|currentJobId=/i.test(a.getAttribute('href') || '')) ||
-            card.querySelector('a') ||
-            card;
+        const exactLink = links.find(anchor => {
+            const href = anchor.getAttribute('href') || '';
+            if (new RegExp(`/jobs/view/${id}(?:[/?#]|$)`, 'i').test(href)) return true;
+            try {
+                return new URL(href, location.href).searchParams.get('currentJobId') === String(id);
+            } catch {
+                return false;
+            }
+        });
+        if (exactLink) return exactLink;
+
+        const exactNode = card.querySelector(
+            `[data-job-id="${id}"],[data-occludable-job-id="${id}"],[componentkey*="job-card-component-ref-${id}"]`
+        );
+        if (exactNode) return exactNode;
+
+        return idFromElement(card) === String(id) ? card : null;
     }
 
     async function activateCard(id, scroller) {
         const card = await locateCardById(id, scroller);
-        if (!card) throw new Error(`Card non trovata nel DOM per Job ID ${id}`);
+        if (!card) throw new Error(`Job card not found in the DOM for Job ID ${id}`);
 
         try { card.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch {}
         await sleep(20);
 
         const clickable = clickableForCard(card, id);
-        if (!clickable) throw new Error(`Elemento cliccabile non trovato per Job ID ${id}`);
+        if (!clickable) throw new Error(`No safe clickable element found for Job ID ${id}`);
 
         debugLog('DEBUG', 'job.card.click', {
             jobId: String(id),
@@ -1342,7 +1392,7 @@
                     pointerType: 'mouse'
                 }));
             } catch {
-                throw new Error(`Impossibile attivare la card per Job ID ${id}: ${error?.message || error}`);
+                throw new Error(`Unable to activate the job card for Job ID ${id}: ${error?.message || error}`);
             }
         }
         return card;
@@ -1592,7 +1642,7 @@
             await sleep(CONFIG.panePoll);
         }
 
-        const error = new Error(`Pannello/descrizione non caricati entro ${timeoutMs} ms per Job ID ${id}`);
+        const error = new Error(`Job details pane/description did not load within ${timeoutMs} ms for Job ID ${id}`);
         error.diagnostic = last || {
             selectedId: currentJobIdFromPage(),
             actualTitle: paneTitle(),
@@ -1653,7 +1703,7 @@
             alreadySeen: metaMap.size - entries.length
         });
 
-        if (!metaMap.size) throw new Error('Nessun annuncio trovato nella pagina corrente');
+        if (!metaMap.size) throw new Error('No job listings found on the current page');
 
         let added = 0;
         let consecutiveFailures = 0;
@@ -1676,8 +1726,8 @@
         });
 
         setStatus(
-            `Pagina ${state.page + 1}/${state.targetPages}\n` +
-            `${entries.length} annunci trovati`
+            `Page ${state.page + 1}/${state.targetPages}\n` +
+            `${entries.length} jobs found`
         );
 
         for (let index = 0; index < entries.length; index++) {
@@ -1686,8 +1736,8 @@
 
             const [id, meta] = entries[index];
             setStatus(
-                `Pagina ${state.page + 1}/${state.targetPages}\n` +
-                `Annuncio ${index + 1}/${entries.length}\n` +
+                `Page ${state.page + 1}/${state.targetPages}\n` +
+                `Job ${index + 1}/${entries.length}\n` +
                 `${meta.title || id}`
             );
 
@@ -1731,8 +1781,8 @@
                 if (consecutiveFailures >= CONFIG.maxConsecutivePaneFailures) {
                     saveState(state);
                     throw new Error(
-                        `${consecutiveFailures} pannelli LinkedIn consecutivi non caricati. ` +
-                        `Interrompo per evitare una cascata di richieste.`
+                        `${consecutiveFailures} consecutive LinkedIn job panes failed to load. ` +
+                        `Stopping to avoid a retry cascade.`
                     );
                 }
             }
@@ -1786,14 +1836,14 @@
     }
 
     function buildTxt(state) {
-        let out = `LINKEDIN JOB EXTRACTOR V${VERSION}\n\nData: ${new Date().toLocaleString()}\nAnnunci corretti: ${state.results.length}\nAnnunci saltati: ${state.errors.length}\n\n============================================================\n`;
+        let out = `LINKEDIN JOB EXTRACTOR V${VERSION}\n\nDate: ${new Date().toLocaleString()}\nSuccessful jobs: ${state.results.length}\nSkipped jobs: ${state.errors.length}\n\n============================================================\n`;
         state.results.forEach((job, index) => {
-            out += `\n\nANNUNCIO ${index + 1}\n\nTITOLO\n${job.title || '-'}\n\nAZIENDA\n${job.company || '-'}\n\nLOCALITA' / MODALITA\n${job.location || '-'}\n\nRETRIBUZIONE / RAL\n${job.salary || '-'}\n\nINFO LINKEDIN\n${job.linkedinInfo || '-'}\n\nJOB ID\n${job.jobId || '-'}\n\nURL\n${job.url || '-'}\n\nSORGENTE DESCRIZIONE\n${job.descriptionSource || '-'}\n\nDESCRIZIONE COMPLETA\n\n${job.description || '-'}\n\nTESTO CARD\n\n${job.cardText || '-'}\n\n============================================================\n`;
+            out += `\n\nJOB ${index + 1}\n\nTITLE\n${job.title || '-'}\n\nCOMPANY\n${job.company || '-'}\n\nLOCATION / WORK MODE\n${job.location || '-'}\n\nSALARY / COMPENSATION\n${job.salary || '-'}\n\nLINKEDIN INFO\n${job.linkedinInfo || '-'}\n\nJOB ID\n${job.jobId || '-'}\n\nURL\n${job.url || '-'}\n\nDESCRIPTION SOURCE\n${job.descriptionSource || '-'}\n\nFULL DESCRIPTION\n\n${job.description || '-'}\n\nCARD TEXT\n\n${job.cardText || '-'}\n\n============================================================\n`;
         });
         if (state.errors.length) {
-            out += `\n\n============================================================\nANNUNCI SALTATI\n============================================================\n`;
+            out += `\n\n============================================================\nSKIPPED JOBS\n============================================================\n`;
             state.errors.forEach((e, i) => {
-                out += `\n\n${i + 1}. ${e.title || 'Job'} · ID ${e.jobId || '-'}\n\nPagina: ${e.page || '-'}\nMotivo: ${e.reason || '-'}\n`;
+                out += `\n\n${i + 1}. ${e.title || 'Job'} · ID ${e.jobId || '-'}\n\nPage: ${e.page || '-'}\nReason: ${e.reason || '-'}\n`;
             });
         }
         return out;
@@ -1817,7 +1867,7 @@
 
     async function exportResults(state, format) {
         if (!state?.results?.length) {
-            throw new Error('Nessun risultato disponibile da salvare.');
+            throw new Error('No results are available to save.');
         }
 
         const base = exportBaseName();
@@ -1862,9 +1912,9 @@
         });
         stopProgressClock();
         setStatus(
-            `Completato\n` +
-            `${state.results.length} annunci pronti · ${state.errors.length} saltati\n` +
-            `Scegli il formato e premi SALVA RISULTATI`
+            `Completed\n` +
+            `${state.results.length} jobs ready · ${state.errors.length} skipped\n` +
+            `Choose a format and click SAVE RESULTS`
         );
         refreshControls(state);
     }
@@ -1895,9 +1945,9 @@
 
             const next = state.page + 1;
             setStatus(
-                `Pagina ${state.page + 1}/${state.targetPages} completata\n` +
-                `${added} nuovi annunci\n` +
-                `Apro pagina ${next + 1}/${state.targetPages}...`
+                `Page ${state.page + 1}/${state.targetPages} completed\n` +
+                `${added} new jobs\n` +
+                `Opening page ${next + 1}/${state.targetPages}...`
             );
             await sleep(350);
             goPage(state, next);
@@ -1912,9 +1962,9 @@
             });
             stopProgressClock();
             setStatus(
-                `${e?.fatal ? 'ARRESTO DI SICUREZZA' : 'ERRORE'}\n\n${e?.message || String(e)}\n\n` +
-                `Risultati conservati: ${current?.results?.length || 0}\n` +
-                'Scarica il LOG DEBUG se vuoi analizzarlo.'
+                `${e?.fatal ? 'SAFETY STOP' : 'ERROR'}\n\n${e?.message || String(e)}\n\n` +
+                `Results preserved: ${current?.results?.length || 0}\n` +
+                'Download the DEBUG LOG for diagnostics.'
             );
             RUNNING = false;
             refreshControls(current);
@@ -1973,7 +2023,7 @@
         }
         debugLog('WARN', 'run.stop.requested', { results: state?.results?.length || 0, errors: state?.errors?.length || 0 });
         stopProgressClock();
-        setStatus('Interrotto.\nI risultati già raccolti restano conservati.');
+        setStatus('Stopped.\nCollected results remain available.');
         RUNNING = false;
         refreshControls(state);
     }
@@ -1985,7 +2035,7 @@
         setPages(1);
         resetProgressUi();
         debugLog('INFO', 'run.reset');
-        setStatus('Pronto.');
+        setStatus('Ready.');
         refreshControls(null);
     }
 
@@ -2030,14 +2080,14 @@
 
         if (state.completedAt) {
             setStatus(
-                `Completato\n` +
-                `${state.results.length} annunci pronti · ${state.errors.length} saltati\n` +
-                `Scegli il formato e premi SALVA RISULTATI`
+                `Completed\n` +
+                `${state.results.length} jobs ready · ${state.errors.length} skipped\n` +
+                `Choose a format and click SAVE RESULTS`
             );
         } else {
             setStatus(
-                `Ultima estrazione interrotta\n` +
-                `${state.results.length} risultati disponibili`
+                `Previous extraction stopped\n` +
+                `${state.results.length} results available`
             );
         }
 
