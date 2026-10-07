@@ -824,7 +824,7 @@
         startButtonEl.addEventListener('click', () => runDetached('ui.start', startNew));
         stopButtonEl.addEventListener('click', stopRun);
         resetButtonEl.addEventListener('click', resetRun);
-        debugButtonEl.addEventListener('click', () => runDetached('ui.download-log', () => downloadDebugLog('pulsante')));
+        debugButtonEl.addEventListener('click', () => runDetached('ui.download-log', () => downloadDebugLog('button')));
         saveButtonEl.addEventListener('click', () => runDetached('ui.save-results', async () => {
             const state = loadState();
             if (!state?.results?.length || state.running) return;
