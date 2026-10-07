@@ -27,7 +27,9 @@ It works directly inside the LinkedIn Jobs interface, collecting job metadata an
 3. Confirm the installation in Tampermonkey.
 4. Open LinkedIn Jobs.
 
-No build step or additional dependency is required.
+No build step or additional dependencies are required.
+
+The entire project runs from a single userscript: `linkedin-job-extractor.user.js`.
 
 ## Usage
 
@@ -106,20 +108,6 @@ https://www.linkedin.com/jobs/*
 It is designed for Tampermonkey-compatible desktop browsers.
 
 Because LinkedIn can change its interface without notice, future DOM changes may require selector updates.
-
-## Project structure
-
-The project intentionally ships as a single userscript:
-
-```text
-linkedin-job-extractor/
-├── linkedin-job-extractor.user.js
-├── README.md
-└── docs/
-    └── linkedin-job-extractor.png
-```
-
-There is no bundler or runtime dependency. The installed file is the same source file stored in this repository.
 
 ## Disclaimer
 
