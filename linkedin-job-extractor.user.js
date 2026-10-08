@@ -2,7 +2,7 @@
 // @name         LinkedIn Job Extractor
 // @author       Raffaele Marco Cecere
 // @namespace    https://github.com/raffaelececere/linkedin-job-extractor
-// @version      1.0.1
+// @version      1.0.2
 // @description  Extract complete LinkedIn job listings and export structured TXT and JSON files.
 // @match        https://www.linkedin.com/jobs/*
 // @homepageURL  https://github.com/raffaelececere/linkedin-job-extractor
@@ -24,7 +24,7 @@
         return;
     }
 
-    const VERSION = '1.0.1';
+    const VERSION = '1.0.2';
     const STATE_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_STATE';
     const POS_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_POSITION';
     const LOG_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_DEBUG_LOG';
@@ -1598,11 +1598,12 @@
         };
     }
 
-    async function waitForPane(id, meta, timeoutMs = CONFIG.paneTimeout) {
+    async function waitForPane(id, meta, timeoutMs = CONFIG.paneTimeout, previousJob = null) {
         const started = performance.now();
         let expansionHandled = false;
         let expansionResult = null;
         let last = null;
+        let staleContentLogged = false;
 
         while (!STOP && performance.now() - started < timeoutMs) {
             const selectedId = currentJobIdFromPage();
@@ -1612,14 +1613,31 @@
             const titleOk = titleMatches(meta.title, actualTitle);
             const companyOk = !meta.company || !actualCompany || titleMatches(meta.company, actualCompany);
             const fallbackIdentityOk = titleOk && companyOk;
+            const identityContradiction =
+                Boolean(actualTitle && !titleOk) ||
+                Boolean(meta.company && actualCompany && !companyOk);
 
-            if (idOk || fallbackIdentityOk) {
+            if ((idOk || fallbackIdentityOk) && !identityContradiction) {
                 if (!expansionHandled && descriptionElement(document)) {
                     expansionResult = await expandDescriptionIfNeeded(id);
                     expansionHandled = true;
                 }
 
                 const job = readCurrentPaneJob(meta, id);
+                const samePreviousDescription = Boolean(
+                    previousJob?.description &&
+                    clean(previousJob.description) === clean(job.description)
+                );
+                const samePreviousListing = Boolean(
+                    previousJob &&
+                    titleMatches(meta.title, previousJob.title) &&
+                    (!meta.company || !previousJob.company || titleMatches(meta.company, previousJob.company))
+                );
+                const staleContent =
+                    samePreviousDescription &&
+                    !samePreviousListing &&
+                    !fallbackIdentityOk;
+
                 last = {
                     selectedId,
                     actualTitle,
@@ -1627,14 +1645,26 @@
                     company: job.company,
                     location: job.location,
                     descriptionLength: job.description.length,
+                    staleContent,
                     expansion: expansionResult
                 };
 
-                if (job.description.length >= 80) {
+                if (staleContent && !staleContentLogged) {
+                    debugLog('WARN', 'job.pane.stale_content', {
+                        jobId: String(id),
+                        previousJobId: previousJob?.jobId || '',
+                        expectedTitle: meta.title || '',
+                        previousTitle: previousJob?.title || '',
+                        descriptionLength: job.description.length
+                    });
+                    staleContentLogged = true;
+                }
+
+                if (job.description.length >= 80 && !staleContent) {
                     return {
                         job,
                         elapsedMs: Math.round(performance.now() - started),
-                        selectedBy: idOk ? 'currentJobId' : 'title'
+                        selectedBy: fallbackIdentityOk ? 'title+company' : 'currentJobId'
                     };
                 }
             }
@@ -1651,12 +1681,12 @@
         throw error;
     }
 
-    async function extractJobInPage(id, meta, scroller) {
+    async function extractJobInPage(id, meta, scroller, previousJob = null) {
         const started = performance.now();
         await activateCard(id, scroller);
 
         try {
-            const result = await waitForPane(id, meta, CONFIG.paneTimeout);
+            const result = await waitForPane(id, meta, CONFIG.paneTimeout, previousJob);
             debugLog('INFO', 'job.inpage.success', {
                 jobId: String(id),
                 title: result.job.title,
@@ -1678,7 +1708,7 @@
             });
 
             await activateCard(id, scroller);
-            const result = await waitForPane(id, meta, 2500);
+            const result = await waitForPane(id, meta, 2500, previousJob);
             debugLog('INFO', 'job.inpage.success_after_retry', {
                 jobId: String(id),
                 descriptionLength: result.job.description.length,
@@ -1749,7 +1779,8 @@
             });
 
             try {
-                const job = await extractJobInPage(id, meta, scroller);
+                const previousJob = state.results[state.results.length - 1] || null;
+                const job = await extractJobInPage(id, meta, scroller, previousJob);
                 if (!state.seenIds.includes(id)) {
                     state.results.push(job);
                     state.seenIds.push(id);
