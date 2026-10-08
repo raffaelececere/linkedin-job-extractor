@@ -2,7 +2,7 @@
 // @name         LinkedIn Job Extractor
 // @author       Raffaele Marco Cecere
 // @namespace    https://github.com/raffaelececere/linkedin-job-extractor
-// @version      1.0.2
+// @version      1.0.3
 // @description  Extract complete LinkedIn job listings and export structured TXT and JSON files.
 // @match        https://www.linkedin.com/jobs/*
 // @homepageURL  https://github.com/raffaelececere/linkedin-job-extractor
@@ -24,7 +24,7 @@
         return;
     }
 
-    const VERSION = '1.0.2';
+    const VERSION = '1.0.3';
     const STATE_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_STATE';
     const POS_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_POSITION';
     const LOG_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_DEBUG_LOG';
@@ -583,8 +583,9 @@
         minimize.setAttribute('aria-label', 'Minimize panel');
         Object.assign(minimize.style, {
             position: 'absolute', top: '5px', right: '36px', width: '28px', height: '28px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0',
             border: '0', background: 'transparent', color: '#444', fontSize: '20px',
-            lineHeight: '24px', cursor: 'pointer', borderRadius: '5px'
+            lineHeight: '1', cursor: 'pointer', borderRadius: '5px'
         });
 
         miniProgressEl = document.createElement('span');
