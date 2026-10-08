@@ -2,7 +2,7 @@
 // @name         LinkedIn Job Extractor
 // @author       Raffaele Marco Cecere
 // @namespace    https://github.com/raffaelececere/linkedin-job-extractor
-// @version      1.0.3
+// @version      1.0.4
 // @description  Extract complete LinkedIn job listings and export structured TXT and JSON files.
 // @match        https://www.linkedin.com/jobs/*
 // @homepageURL  https://github.com/raffaelececere/linkedin-job-extractor
@@ -24,7 +24,7 @@
         return;
     }
 
-    const VERSION = '1.0.3';
+    const VERSION = '1.0.4';
     const STATE_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_STATE';
     const POS_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_POSITION';
     const LOG_KEY = 'LINKEDIN_JOB_EXTRACTOR_V1_DEBUG_LOG';
@@ -578,15 +578,25 @@
         });
 
         const minimize = document.createElement('button');
-        minimize.textContent = '−';
         minimize.title = 'Minimize panel';
         minimize.setAttribute('aria-label', 'Minimize panel');
         Object.assign(minimize.style, {
             position: 'absolute', top: '5px', right: '36px', width: '28px', height: '28px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0',
-            border: '0', background: 'transparent', color: '#444', fontSize: '20px',
-            lineHeight: '1', cursor: 'pointer', borderRadius: '5px'
+            border: '0', background: 'transparent', color: '#444',
+            cursor: 'pointer', borderRadius: '5px'
         });
+
+        const minimizeIcon = document.createElement('span');
+        Object.assign(minimizeIcon.style, {
+            display: 'block',
+            width: '12px',
+            height: '2px',
+            background: 'currentColor',
+            border: '0',
+            boxSizing: 'border-box'
+        });
+        minimize.append(minimizeIcon);
 
         miniProgressEl = document.createElement('span');
         Object.assign(miniProgressEl.style, {
@@ -604,8 +614,9 @@
         close.setAttribute('aria-label', 'Close panel');
         Object.assign(close.style, {
             position: 'absolute', top: '5px', right: '7px', width: '28px', height: '28px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0',
             border: '0', background: 'transparent', color: '#444', fontSize: '22px',
-            lineHeight: '24px', cursor: 'pointer', borderRadius: '5px'
+            lineHeight: '1', cursor: 'pointer', borderRadius: '5px'
         });
 
         const subtitle = document.createElement('div');
@@ -794,7 +805,17 @@
             title.style.fontSize = minimized ? '12px' : '14px';
             title.style.marginRight = minimized ? '60px' : '64px';
 
-            minimize.textContent = minimized ? '□' : '−';
+            Object.assign(minimizeIcon.style, minimized ? {
+                width: '10px',
+                height: '10px',
+                background: 'transparent',
+                border: '1.5px solid currentColor'
+            } : {
+                width: '12px',
+                height: '2px',
+                background: 'currentColor',
+                border: '0'
+            });
             minimize.title = minimized ? 'Restore panel' : 'Minimize panel';
             minimize.setAttribute(
                 'aria-label',
